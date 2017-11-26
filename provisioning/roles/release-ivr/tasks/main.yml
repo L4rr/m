@@ -1,0 +1,42 @@
+- name: copy stop script
+  template: src={{ ivr_kill_script }} dest=/usr/local/bin/killivr owner=root mode=0755
+
+- name: copy start script
+  template: src={{ ivr_start_script }} dest=/usr/local/bin/startivr owner=root mode=0755
+
+- name: kill current IVR processes
+  shell: /usr/local/bin/killivr
+  become: yes
+  ignore_errors: true
+  args:
+    executable: /bin/bash
+
+- name: put updated project
+  shell: mv {{ivr_tmp_dir}}/* {{ ivr_root_dir }}
+
+- name: pip install requirements
+  shell: pip3 install -r requirements.txt
+  args:
+      chdir: "{{ ivr_root_dir }}"
+
+- name: set permissions
+  shell: chown {{ ivr_run_user }}:{{ ivr_run_user }} -R {{ ivr_root_dir }}
+  ignore_errors: true
+
+- name: create log file
+  shell: touch /var/log/ivr_app.log
+  ignore_errors: true
+
+- name: set permissions to log file
+  shell: chown {{ ivr_run_user }}:{{ ivr_run_user }} /var/log/ivr_app.log
+  ignore_errors: true
+
+- name: remove tmp dir
+  file: path={{ivr_tmp_dir}} state=absent
+
+- name: start IVR
+  shell: /usr/local/bin/startivr
+  become: yes
+
+- name: enable IVR APP logrotate
+  template: src=logrotate.j2 dest=/etc/logrotate.d/ivr_app owner=root mode=0755

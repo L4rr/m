@@ -1,0 +1,28 @@
+---
+- hosts: all
+  gather_facts: yes
+  become: yes
+
+  vars:
+    asterisk_config_git_tmp_dir: /tmp/git_config_tmp_dir/
+    asterisk_config_dir: /etc/asterisk/
+    asterisk_num_fetcher_dir: /opt/rr-asterisk-num-fetcher/
+    asterisk_config_git_branch: "HEAD"
+
+    git_key_path: certs/git.pem
+    asterisk_config_git_repo: git@github.com:jtc267/asterisk.git
+
+    asterisk_run_user: asterisk
+    sip_external_ip: "34.238.77.235"
+    sip_localnet: "172.31.51.255/20"
+
+  roles:
+    # - geerlingguy.repo-epel
+    # - geerlingguy.git
+    # - geerlingguy.ansible
+    # - geerlingguy.pip
+    - ontic.nginx
+    # - dotstrap.fish
+    # - { role: dotstrap.fish, user_name: "centos", fish_config_file: "/home/centos" }
+   # - { role: dougbtv.install-asterisk, configure_user: true, iasterisk_url: "https://downloads.asterisk.org/pub/telephony/certified-asterisk/asterisk-certified-13.13-current.tar.gz" }
+    - deploy-asterisk-config

@@ -1,0 +1,35 @@
+---
+- name: rsyslog exists?
+  stat: path=/usr/local/bin/remote_syslog
+  register: rsyslog
+
+- debug: msg="rsyslog already instaled"
+  when: rsyslog.stat.exists
+
+- name: create temporary directory
+  file:
+    path: "{{ papertrail_temp_dir }}"
+    state: directory
+  when: not rsyslog.stat.exists
+
+- name: download remote_syslog.tar.gz
+  shell: creates="{{ papertrail_temp_dir }}/remote_syslog.tar.gz"
+         chdir="{{ papertrail_temp_dir }}"
+         wget -O remote_syslog.tar.gz "https://github.com/papertrail/remote_syslog2/releases/download/v0.19/remote_syslog_linux_amd64.tar.gz"
+  when: not rsyslog.stat.exists
+
+- name: extract and install.u remote_syslog.tar.gz
+  shell: chdir="{{ papertrail_temp_dir }}"
+         tar xzf remote_syslog.tar.gz \
+         && cd remote_syslog \
+         && cp ./remote_syslog /usr/local/bin
+  when: not rsyslog.stat.exists
+
+- name: copy log_files.yml file
+  template: src="{{ papertrail_config_file }}" dest=/etc/log_files.yml
+
+- name: configure Upstart for papertrail
+  template: src="{{ papertrail_upstart_src_file }}" dest=/etc/init/papertrail.conf
+
+- name: be sure papertrail is running and enabled
+  service: name=papertrail state=restarted

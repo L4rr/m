@@ -1,0 +1,75 @@
+---
+
+############# asterisk.conf ###############
+
+# - name: Modify provided asterisk.conf to strip remarks (INI module can't process without it)
+#   command: 'sed -i -e "/^\s*;/d" /etc/asterisk/asterisk.conf'
+
+- name: Set INI options in asterisk.conf to reflect asterisk user
+  ini_file: 
+    dest: "/etc/asterisk/asterisk.conf" 
+    section: "{{ item.section }}" 
+    option: "{{ item.option }}" 
+    value: "{{ item.value }}" 
+  with_items:
+    - { section: "files", option: "astctlpermissions", value: "0775"}
+    - { section: "files", option: "astctlowner", value: 'astctlowner = {{asterisk_run_user}}'}
+    - { section: "files", option: "astctlgroup", value: 'astctlgroup = {{asterisk_run_user}}'}
+    - { section: "files", option: "astctl", value: 'astctl = asterisk.ctl'}
+    - { section: "options", option: "runuser", value: '{{asterisk_run_user}}'}
+    - { section: "options", option: "rungroup", value: '{{asterisk_run_user}}'}
+
+# - name: Fix INI file to be asterisk-ish-y
+#   command: 'sed -i -e "s/= >/=>/g" /etc/asterisk/asterisk.conf'
+
+############# sip.conf ###############
+
+# - name: Modify provided sip.conf to strip remarks (INI module can't process without it)
+#   command: 'sed -i -e "/^\s*;/d" /etc/asterisk/sip.conf'
+
+- name: Set INI options in sip.conf to reflect real ip addresses
+  ini_file: 
+    dest: "/etc/asterisk/sip.conf" 
+    section: "{{ item.section }}" 
+    option: "{{ item.option }}" 
+    value: "{{ item.value }}" 
+  with_items:
+    - { section: "general", option: "externip", value: '{{sip_external_ip}}'}
+    - { section: "general", option: "localnet", value: '{{sip_localnet}}'}
+
+# - name: Fix INI file to be asterisk-ish-y
+#   command: 'sed -i -e "s/= >/=>/g" /etc/asterisk/sip.conf'
+
+############# pjsip.conf ###############
+
+# - name: Modify provided pjsip.conf to strip remarks (INI module can't process without it)
+#   command: 'sed -i -e "/^\s*;/d" /etc/asterisk/pjsip.conf'
+
+- name: Set INI options in pjsip.conf to reflect real ip addresses
+  ini_file: 
+    dest: "/etc/asterisk/pjsip.conf" 
+    section: "{{ item.section }}" 
+    option: "{{ item.option }}" 
+    value: "{{ item.value }}" 
+  with_items:
+    - { section: "transport-udp-nat", option: "external_media_address", value: '{{sip_external_ip}}'}
+    - { section: "transport-udp-nat", option: "external_signaling_address", value: '{{sip_external_ip}}'}
+    - { section: "transport-udp-nat", option: "local_net", value: '{{sip_localnet}}'}
+
+# - name: Fix INI file to be asterisk-ish-y
+#   command: 'sed -i -e "s/= >/=>/g" /etc/asterisk/pjsip.conf'
+
+- name: restart asterisk service
+  register: result
+  become: true
+  shell: systemctl restart asterisk
+
+- debug: var=result.stdout_lines
+
+- name: start asterisk and generate systemctl/asterisk if it doesn't exist
+  register: result2
+  # when: result.rc != 0
+  become: true
+  shell: asterisk -&
+
+- debug: var=result2.stdout_lines

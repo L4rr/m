@@ -1,0 +1,4 @@
+[servers]
+
+host1 ansible_ssh_host=34.238.77.235 ansible_ssh_user=larry
+

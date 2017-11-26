@@ -1,0 +1,7 @@
+---
+- name: make sure the folder to contain the directory exists
+  file: path=/record state=directory
+
+- name: set permissions
+  shell: chown {{asterisk_run_user}}:{{asterisk_run_user}} -R /record
+  ignore_errors: true

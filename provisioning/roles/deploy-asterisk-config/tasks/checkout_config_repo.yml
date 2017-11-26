@@ -1,0 +1,50 @@
+---
+- name: remove previous cloned repo
+  file: path={{ asterisk_config_git_tmp_dir }} state=absent
+
+- name: make sure tmp folder exists
+  file: path={{ asterisk_config_git_tmp_dir }} state=directory
+
+- name: copy deploy key
+  copy: src={{ git_key_path }} dest=/tmp/deploy_key_file.pem mode=0400 force=yes
+
+- name: clone repo
+  git: repo={{ asterisk_config_git_repo }} dest={{ asterisk_config_git_tmp_dir }} version={{ asterisk_config_git_branch }} accept_hostkey=True depth=1 key_file=/tmp/deploy_key_file.pem
+
+- name: remove deploy key
+  file: path=/tmp/deploy_key_file state=absent
+
+- name: remove current config dir
+  file: path={{ asterisk_config_dir }} state=absent
+
+- name: copy config directory
+  shell: mv {{ asterisk_config_git_tmp_dir }}/{{ asterisk_config_dir }} {{ asterisk_config_dir }} 
+
+- name: set permissions config dir
+  shell: chown {{asterisk_run_user}}:{{asterisk_run_user}} -R {{ asterisk_config_dir }}
+  ignore_errors: true
+
+- name: remove current num fetcher dir
+  file: path={{ asterisk_num_fetcher_dir }} state=absent
+
+- name: copy num fetcher directory
+  shell: mv {{ asterisk_config_git_tmp_dir }}/{{ asterisk_num_fetcher_dir }} {{ asterisk_num_fetcher_dir }} 
+
+- name: set permissions
+  shell: chown {{asterisk_run_user}}:{{asterisk_run_user}} -R {{ asterisk_num_fetcher_dir }}
+  ignore_errors: true
+
+- name: installing num fetcher requirements
+  pip: chdir={{ asterisk_num_fetcher_dir }} requirements= "{{ asterisk_num_fetcher_dir }}/requirements.txt"
+
+- name: restart asterisk service
+  register: result
+  become: true
+  shell: systemctl restart asterisk
+
+- debug: var=result.stdout_lines
+
+- name: start asterisk and generate systemctl/asterisk if it doesn't exist
+  # when: result.rc != 0
+  become: true
+  shell: asterisk -&

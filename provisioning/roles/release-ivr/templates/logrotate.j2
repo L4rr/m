@@ -1,0 +1,17 @@
+/var/log/ivr_app.log {
+	monthly
+	rotate 12
+	compress
+	delaycompress
+	missingok
+	notifempty
+	create 644 {{ ivr_run_user }} {{ ivr_run_user }}
+}
+/var/log/ivr.log {
+	sizek 100
+	rotate 5
+	compress
+	delaycompress
+	missingok
+	create 644 {{ ivr_run_user }} {{ ivr_run_user }}
+}
